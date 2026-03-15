@@ -4,4 +4,12 @@ dist/
 !index.html
 .env
 .env.*
-update-refs.log
+*.log
+.vscode/
+.claude/
+Previous instructions/
+launch-claude.bat
+launch-claude.ps1
+setup-scheduler.ps1
+*.JPG
+*.jpg

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Component } from "react";
 import REFS from "./refs.json";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -512,10 +512,14 @@ const ValueTab = () => {
 };
 
 // ── CUSTOM AI COMPARISON TAB ─────────────────────────────────────────────────
+// ── CUSTOM COMPARISON COLORS ─────────────────────────────────────────────────
+// Colors for the three systems in custom comparison results (amber/cyan/purple)
 const C_COLORS = ["#F59E0B", "#06B6D4", "#A855F7"];
 const C_GLOWS  = ["rgba(245,158,11,0.4)", "rgba(6,182,212,0.4)", "rgba(168,85,247,0.4)"];
 
-const buildPrompt = (x, y, z) => `You are a PC hardware benchmark database. Output ONLY a JSON object. No prose, no markdown, no explanation, no code fences. Start your response with { and end with }.
+// Builds the comparison prompt with reference data baked in so the AI can interpolate
+// The JSON template is large (~2KB output) — max_tokens in runAI must accommodate this
+const buildPrompt = (x, y, z) => `You are a PC hardware benchmark database. Output ONLY a JSON object. No prose, no markdown, no explanation, no code fences. Start your response with { and end with }. Output the COMPLETE JSON — do not stop early or truncate.
 
 SYSTEMS TO ANALYSE:
 A: ${x}
@@ -561,15 +565,21 @@ LLM 7B tok/s: GTX1080Ti≈4(CUDA only), RTX3050≈8, RTX3060≈18, RTX3070≈28,
 LLM 13B needs 8GB+ VRAM. SD1.5 img/s: GTX1080Ti≈1.8, RTX3050≈4, RTX3080≈10, RTX4070≈12, RTX5060Ti≈14, RTX5070≈19.
 AnimateDiff needs 6GB+ VRAM. CogVideoX-5B needs 12GB+ VRAM.
 
+Blender Classroom (GPU Cycles render, seconds lower=better): GTX1080Ti≈420, RTX3060≈280, RTX3070≈200, RTX4060Ti≈195, RTX4070≈145, RTX4080≈95, RTX5060Ti≈130, RTX5070≈90, RX9070≈120.
+4K H.265 Export (seconds, 1min clip): GTX1080Ti≈180(CPU only), RTX3060≈55, RTX3070≈42, RTX4060Ti≈38, RTX4070≈30, RTX5060Ti≈28, RTX5070≈22. NVENC quality: Turing=good, Ampere=great, Ada/Blackwell=best.
+DaVinci Resolve 4K timeline FPS: GTX1080Ti≈24, RTX3060≈45, RTX4060Ti≈55, RTX4070≈65, RTX5060Ti≈60, RTX5070≈75.
+OBS streaming FPS overhead (1080p60 NVENC): ~2-5% with Turing+, ~15-20% without NVENC. x264 medium uses ~4 CPU threads.
+
 System price_kr: full desktop system price in SEK at launch/peak. peak_year: year that GPU/CPU combo was considered best value.
 GTX1080Ti systems≈20000-25000kr in 2017. RTX3080 systems≈25000-35000kr in 2021. RTX4070Ti systems≈25000-30000kr in 2023.
 
 --- OUTPUT FORMAT (fill every 0 with a real number, all labels ≤12 chars ALL CAPS) ---
 
-{"systems":{"a":{"label":"CURRENT","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"b":{"label":"UPGRADE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"c":{"label":"REFERENCE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0}},"fps_1080p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"fps_1440p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"benchmarks":[{"metric":"Cinebench R23 MT","unit":"pts","a":0,"b":0,"c":0,"max":20000},{"metric":"3DMark TimeSpy","unit":"pts","a":0,"b":0,"c":0,"max":25000},{"metric":"AI TOPS (INT8)","unit":"TOPS","a":0,"b":0,"c":0,"max":1000},{"metric":"VRAM","unit":"GB","a":0,"b":0,"c":0,"max":24},{"metric":"Mem Bandwidth","unit":"GB/s","a":0,"b":0,"c":0,"max":1100}],"radar":[{"subject":"1080p FPS","a":0,"b":0,"c":100},{"subject":"1440p FPS","a":0,"b":0,"c":100},{"subject":"CPU Score","a":0,"b":0,"c":100},{"subject":"GPU Score","a":0,"b":0,"c":100},{"subject":"AI Perf","a":0,"b":0,"c":100},{"subject":"VRAM","a":0,"b":0,"c":100},{"subject":"Memory BW","a":0,"b":0,"c":100}],"ai_workloads":[{"task":"LLM 7B (tok/s)","a":"~0","b":"~0","c":"~0","aRaw":0,"bRaw":0,"cRaw":0,"max":100},{"task":"SD 1.5 (img/s)","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":20},{"task":"SDXL (img/s)","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":7},{"task":"AnimateDiff (f/min)","a":"N/A","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":40},{"task":"CogVideoX-5B","a":"OOM","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":100}],"summary":"2-3 sentence verdict."}
+{"systems":{"a":{"label":"CURRENT","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"b":{"label":"UPGRADE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"c":{"label":"REFERENCE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0}},"fps_1080p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"fps_1440p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"benchmarks":[{"metric":"Cinebench R23 MT","unit":"pts","a":0,"b":0,"c":0,"max":20000},{"metric":"3DMark TimeSpy","unit":"pts","a":0,"b":0,"c":0,"max":25000},{"metric":"AI TOPS (INT8)","unit":"TOPS","a":0,"b":0,"c":0,"max":1000},{"metric":"VRAM","unit":"GB","a":0,"b":0,"c":0,"max":24},{"metric":"Mem Bandwidth","unit":"GB/s","a":0,"b":0,"c":0,"max":1100},{"metric":"Blender Render","unit":"sec","a":0,"b":0,"c":0,"max":500},{"metric":"4K H.265 Export","unit":"sec","a":0,"b":0,"c":0,"max":200},{"metric":"Handbrake 4K","unit":"sec","a":0,"b":0,"c":0,"max":300}],"radar":[{"subject":"1080p FPS","a":0,"b":0,"c":100},{"subject":"1440p FPS","a":0,"b":0,"c":100},{"subject":"CPU Score","a":0,"b":0,"c":100},{"subject":"GPU Score","a":0,"b":0,"c":100},{"subject":"AI Perf","a":0,"b":0,"c":100},{"subject":"VRAM","a":0,"b":0,"c":100},{"subject":"Memory BW","a":0,"b":0,"c":100}],"ai_workloads":[{"task":"LLM 7B (tok/s)","cat":"AI","a":"~0","b":"~0","c":"~0","aRaw":0,"bRaw":0,"cRaw":0,"max":100},{"task":"SD 1.5 (img/s)","cat":"AI","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":20},{"task":"SDXL (img/s)","cat":"AI","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":7},{"task":"AnimateDiff (f/min)","cat":"AI","a":"N/A","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":40},{"task":"CogVideoX-5B","cat":"AI","a":"OOM","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":100},{"task":"DaVinci 4K (FPS)","cat":"VIDEO","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":80},{"task":"Premiere Export","cat":"VIDEO","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":200},{"task":"Blender Cycles (s)","cat":"3D","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":500},{"task":"OBS+Game FPS%","cat":"STREAM","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":100}],"summary":"2-3 sentence verdict covering gaming, content creation, and value."}
 
-Use N/A if a workload cannot run due to insufficient VRAM. Use OOM if VRAM is too small. radar values are 0-100 relative scores where system C=100 for each axis. All FPS values must be positive integers.`;
+Use N/A if a workload cannot run due to insufficient VRAM. Use OOM if VRAM is too small. radar values are 0-100 relative scores where system C=100 for each axis. All FPS values must be positive integers. For time-based metrics (Blender, Export, Handbrake), lower is better — set max to a reasonable ceiling. cat field groups workloads by category for display.`;
 
+// Grouped bar chart for custom comparison FPS data (reused for 1080p and 1440p sub-tabs)
 const CCustomFpsChart = ({ data, labels }) => (
   <ResponsiveContainer width="100%" height={340}>
     <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 56 }} barGap={3} barCategoryGap="25%">
@@ -584,6 +594,7 @@ const CCustomFpsChart = ({ data, labels }) => (
   </ResponsiveContainer>
 );
 
+// Spider/radar chart for custom comparison — shows relative scores across multiple axes
 const CCustomRadar = ({ data, labels }) => (
   <ResponsiveContainer width="100%" height={380}>
     <RadarChart data={data} margin={{ top: 16, right: 40, bottom: 16, left: 40 }}>
@@ -596,9 +607,43 @@ const CCustomRadar = ({ data, labels }) => (
   </ResponsiveContainer>
 );
 
+// Error Boundary: catches any React render crash in custom results and shows a
+// styled error message instead of a black screen. React requires a class component for this.
+class ResultsErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ marginTop: 28, padding: "16px 20px", background: "#1a0a0a", border: "1px solid #F59E0B44", borderRadius: 2, fontFamily: "monospace" }}>
+          <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 6 }}>⚠ Comparison rendering failed</div>
+          <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>The AI response was incomplete or malformed. This usually happens with the free API.</div>
+          <button onClick={() => this.setState({ hasError: false, error: null })} style={{ padding: "6px 14px", background: "#1a1a1a", border: "1px solid #333", color: "#aaa", fontFamily: "monospace", fontSize: 11, cursor: "pointer", borderRadius: 2 }}>
+            ↻ Dismiss
+          </button>
+          <div style={{ fontSize: 9, color: "#333", marginTop: 8 }}>{this.state.error?.message}</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Renders the AI-generated comparison results across all sub-tabs (FPS, Radar, Benchmarks, AI)
+// Guard: returns error message if AI response was malformed instead of crashing to black screen
 const CustomResults = ({ result }) => {
   const [sub, setSub] = useState("fps1080");
-  const { systems, fps_1080p, fps_1440p, benchmarks, radar, ai_workloads, summary, _meta } = result;
+  // Destructure with empty-array fallbacks so partial AI responses don't crash the render
+  const { systems, fps_1080p = [], fps_1440p = [], benchmarks = [], radar = [], ai_workloads = [], summary = "No summary available.", _meta } = result;
+  // Safety check: if AI response is missing system data, show error instead of crashing
+  if (!systems?.a?.label || !systems?.b?.label || !systems?.c?.label) {
+    return (
+      <div style={{ marginTop: 28, padding: "16px 20px", background: "#1a0a0a", border: "1px solid #F59E0B44", borderRadius: 2, fontFamily: "monospace" }}>
+        <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 6 }}>⚠ Incomplete AI response</div>
+        <div style={{ fontSize: 11, color: "#888" }}>The comparison data is missing or malformed. Please try running the comparison again.</div>
+      </div>
+    );
+  }
   const labels = { a: systems.a.label, b: systems.b.label, c: systems.c.label };
   const sysArr = [
     { ...systems.a, color: C_COLORS[0], glow: C_GLOWS[0] },
@@ -608,44 +653,18 @@ const CustomResults = ({ result }) => {
   const subTabs = [
     { id: "fps1080", label: "1080p" }, { id: "fps1440", label: "1440p" },
     { id: "radar", label: "RADAR" }, { id: "bench", label: "BENCHMARKS" },
-    { id: "ai", label: "AI" },
+    { id: "ai", label: "WORKLOADS" }, { id: "value", label: "VALUE" },
   ];
+
+  // Calculate price-per-performance for VALUE tab
+  const getPrice = (key, i) => Number(_meta?.[i]?.price || result.systems[key]?.price_kr) || 0;
+  const avgFps = (arr, key) => arr?.length ? Math.round(arr.reduce((s, r) => s + (r[key] || 0), 0) / arr.length) : 0;
 
   return (
     <div style={{ marginTop: 28, borderTop: "1px solid #1a1a1a", paddingTop: 24 }}>
       <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace", letterSpacing: 3, marginBottom: 16 }}>// AI ANALYSIS RESULT</div>
 
-      {/* System cards */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-        {sysArr.map((s, i) => (
-          <div key={i} style={{ flex: 1, minWidth: 160, padding: "14px 16px", background: "#0d0d0d", border: `1px solid ${s.color}33`, borderTop: `2px solid ${s.color}`, borderRadius: 2 }}>
-            <div style={{ fontSize: 9, color: s.color, fontFamily: "monospace", letterSpacing: 3, marginBottom: 4 }}>SYS::{String.fromCharCode(65+i)}</div>
-            <div style={{ fontSize: 14, color: "#fff", fontFamily: "monospace", fontWeight: 700, marginBottom: 8 }}>{s.label}</div>
-            {[["CPU", s.cpu], ["GPU", s.gpu], ["RAM", s.ram], ["VRAM", s.vram]].map(([k, v]) => (
-              <div key={k} style={{ fontSize: 10, fontFamily: "monospace", marginBottom: 2, display: "flex", gap: 6 }}>
-                <span style={{ color: s.color, minWidth: 36 }}>{k}</span>
-                <span style={{ color: "#bbb" }}>{v}</span>
-              </div>
-            ))}
-            {(() => {
-              const sysKey = ["a","b","c"][i];
-              const price = _meta?.[i]?.price || result.systems[sysKey]?.price_kr;
-              const year  = _meta?.[i]?.year  || result.systems[sysKey]?.peak_year;
-              const isEst = !_meta?.[i]?.price && result.systems[sysKey]?.price_kr;
-              return (price || year) ? (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a", fontSize: 10, fontFamily: "monospace", color: "#555" }}>
-                  {price && `≈${Number(price).toLocaleString()} kr`}
-                  {price && year && " · "}
-                  {year && `${year}`}
-                  {isEst && <span style={{ color: "#333", marginLeft: 6 }}>(est.)</span>}
-                </div>
-              ) : null;
-            })()}
-          </div>
-        ))}
-      </div>
-
-      {/* Legend */}
+      {/* Legend (system cards are now shown at the top of the page) */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         {sysArr.map((s, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontFamily: "monospace", color: s.color }}>
@@ -704,31 +723,76 @@ const CustomResults = ({ result }) => {
               </tr>
             </thead>
             <tbody>
+              {/* Group workloads by category (cat field) with section headers */}
               {ai_workloads.map((row, i) => {
-                const maxRaw = Math.max(row.aRaw, row.bRaw, row.cRaw);
+                const maxRaw = Math.max(row.aRaw || 0, row.bRaw || 0, row.cRaw || 0);
+                const prevCat = i > 0 ? ai_workloads[i - 1]?.cat : null;
+                const showCatHeader = row.cat && row.cat !== prevCat;
                 return (
-                  <tr key={i} style={{ borderBottom: "1px solid #111" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#ffffff06"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <td style={{ padding: "10px 12px", color: "#888", fontSize: 11 }}>{row.task}</td>
-                    {[{val:row.a,raw:row.aRaw,s:sysArr[0]},{val:row.b,raw:row.bRaw,s:sysArr[1]},{val:row.c,raw:row.cRaw,s:sysArr[2]}].map(({val,raw,s},j) => {
-                      const isNA = val === "N/A" || val === "OOM";
-                      const isMax = raw === maxRaw && raw > 0;
-                      return (
-                        <td key={j} style={{ padding: "10px 12px", textAlign: "center" }}>
-                          <span style={{ color: isNA ? "#333" : s.color, fontWeight: isMax ? 700 : 400, fontSize: 13, textShadow: isMax ? `0 0 10px ${s.glow}` : "none" }}>
-                            {val}{isMax && <span style={{ fontSize: 8, marginLeft: 4, color: "#FFD700" }}>▲</span>}
-                          </span>
+                  <React.Fragment key={i}>
+                    {showCatHeader && (
+                      <tr>
+                        <td colSpan={4} style={{ padding: "10px 12px 4px", fontSize: 9, color: "#555", letterSpacing: 3, fontFamily: "monospace", borderBottom: "1px solid #1a1a1a" }}>
+                          // {row.cat}
                         </td>
-                      );
-                    })}
-                  </tr>
+                      </tr>
+                    )}
+                    <tr style={{ borderBottom: "1px solid #111" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#ffffff06"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <td style={{ padding: "10px 12px", color: "#888", fontSize: 11 }}>{row.task}</td>
+                      {[{val:row.a,raw:row.aRaw,s:sysArr[0]},{val:row.b,raw:row.bRaw,s:sysArr[1]},{val:row.c,raw:row.cRaw,s:sysArr[2]}].map(({val,raw,s},j) => {
+                        const isNA = val === "N/A" || val === "OOM";
+                        const isMax = raw === maxRaw && raw > 0;
+                        return (
+                          <td key={j} style={{ padding: "10px 12px", textAlign: "center" }}>
+                            <span style={{ color: isNA ? "#333" : s.color, fontWeight: isMax ? 700 : 400, fontSize: 13, textShadow: isMax ? `0 0 10px ${s.glow}` : "none" }}>
+                              {val}{isMax && <span style={{ fontSize: 8, marginLeft: 4, color: "#FFD700" }}>▲</span>}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* VALUE tab — price/performance comparison */}
+      {sub === "value" && (() => {
+        const prices = ["a","b","c"].map((k, i) => getPrice(k, i));
+        const fpsAvg = ["a","b","c"].map(k => avgFps(fps_1080p, k));
+        const tscore = benchmarks?.find(b => b.metric?.includes("TimeSpy"));
+        const metrics = [
+          { label: "Avg 1080p FPS", values: fpsAvg, unit: "FPS" },
+          { label: "3DMark TimeSpy", values: ["a","b","c"].map(k => tscore?.[k] || 0), unit: "pts" },
+          { label: "FPS per 1000 kr", values: fpsAvg.map((f, i) => prices[i] > 0 ? Math.round(f / (prices[i] / 1000)) : 0), unit: "FPS/kkr" },
+          { label: "TimeSpy per 1000 kr", values: ["a","b","c"].map((k, i) => prices[i] > 0 ? Math.round((tscore?.[k] || 0) / (prices[i] / 1000)) : 0), unit: "pts/kkr" },
+        ];
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {metrics.map(m => {
+              const maxVal = Math.max(...m.values);
+              return (
+                <div key={m.label}>
+                  <div style={{ fontSize: 10, color: "#555", fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>// {m.label}</div>
+                  {sysArr.map((s, i) => (
+                    <GlowBar key={i} label={s.label} value={m.values[i]} max={maxVal * 1.2 || 1} color={s.color} glow={s.glow} unit={` ${m.unit}`} isWinner={m.values[i] === maxVal && maxVal > 0} />
+                  ))}
+                </div>
+              );
+            })}
+            {prices.some(p => p === 0) && (
+              <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace" }}>
+                ⚠ Some prices missing — fill in price fields for accurate value comparison
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Summary */}
       <div style={{ marginTop: 24, padding: "14px 16px", background: "#0d0d0d", border: `1px solid ${C_COLORS[1]}22`, borderLeft: `3px solid ${C_COLORS[1]}`, borderRadius: 2 }}>
@@ -740,23 +804,122 @@ const CustomResults = ({ result }) => {
 };
 
 // ── SPEC EXTRACTION HELPERS ──────────────────────────────────────────────────
+// ── URL & SPEC EXTRACTION UTILITIES ──────────────────────────────────────────
 const isUrl = (s) => /^https?:\/\//i.test(s.trim());
 
+// Known GPU VRAM specs — avoids needing to follow links to component pages
+// VRAM size and type are fixed per GPU model, so we can look them up directly
+const GPU_VRAM = {
+  "GTX 1050": "2GB GDDR5", "GTX 1050 TI": "4GB GDDR5", "GTX 1060": "6GB GDDR5",
+  "GTX 1070": "8GB GDDR5", "GTX 1070 TI": "8GB GDDR5", "GTX 1080": "8GB GDDR5X",
+  "GTX 1080 TI": "11GB GDDR5X", "GTX 1650": "4GB GDDR6", "GTX 1660": "6GB GDDR5",
+  "GTX 1660 SUPER": "6GB GDDR6", "GTX 1660 TI": "6GB GDDR6",
+  "RTX 2060": "6GB GDDR6", "RTX 2060 SUPER": "8GB GDDR6", "RTX 2070": "8GB GDDR6",
+  "RTX 2070 SUPER": "8GB GDDR6", "RTX 2080": "8GB GDDR6", "RTX 2080 SUPER": "8GB GDDR6",
+  "RTX 2080 TI": "11GB GDDR6",
+  "RTX 3050": "8GB GDDR6", "RTX 3060": "12GB GDDR6", "RTX 3060 TI": "8GB GDDR6",
+  "RTX 3070": "8GB GDDR6", "RTX 3070 TI": "8GB GDDR6X", "RTX 3080": "10GB GDDR6X",
+  "RTX 3080 TI": "12GB GDDR6X", "RTX 3090": "24GB GDDR6X", "RTX 3090 TI": "24GB GDDR6X",
+  "RTX 4060": "8GB GDDR6", "RTX 4060 TI": "8GB GDDR6", "RTX 4070": "12GB GDDR6X",
+  "RTX 4070 SUPER": "12GB GDDR6X", "RTX 4070 TI": "12GB GDDR6X",
+  "RTX 4070 TI SUPER": "16GB GDDR6X", "RTX 4080": "16GB GDDR6X",
+  "RTX 4080 SUPER": "16GB GDDR6X", "RTX 4090": "24GB GDDR6X",
+  "RTX 5060": "8GB GDDR7", "RTX 5060 TI": "16GB GDDR7", "RTX 5070": "12GB GDDR7",
+  "RTX 5070 TI": "16GB GDDR7", "RTX 5080": "16GB GDDR7", "RTX 5090": "32GB GDDR7",
+  "RX 6600": "8GB GDDR6", "RX 6600 XT": "8GB GDDR6", "RX 6700 XT": "12GB GDDR6",
+  "RX 6800": "16GB GDDR6", "RX 6800 XT": "16GB GDDR6", "RX 6900 XT": "16GB GDDR6",
+  "RX 7600": "8GB GDDR6", "RX 7700 XT": "12GB GDDR6", "RX 7800 XT": "16GB GDDR6",
+  "RX 7900 XT": "20GB GDDR6", "RX 7900 XTX": "24GB GDDR6",
+  "RX 9060 XT": "16GB GDDR6", "RX 9070": "16GB GDDR6", "RX 9070 XT": "16GB GDDR6",
+};
+
+// Looks up VRAM from the GPU_VRAM table by matching the GPU model name
+// Normalizes variants like "5070TI" → "5070 TI" and strips brand prefixes
+const lookupVram = (gpuName) => {
+  if (!gpuName) return null;
+  const name = gpuName.toUpperCase()
+    .replace(/GEFORCE\s*/i, "").replace(/RADEON\s*/i, "").replace(/ASUS|PRIME|MSI|GIGABYTE|EVGA|ZOTAC|INNO3D|OC\b/gi, "")
+    .replace(/(\d)(TI|XT|SUPER)/g, "$1 $2")  // "5070TI" → "5070 TI"
+    .replace(/\s+/g, " ").trim();
+  for (const [key, val] of Object.entries(GPU_VRAM)) {
+    if (name.includes(key)) return val;
+  }
+  return null;
+};
+
+// Pre-parse specs directly from URL slugs (e.g. Webhallen, Inet, Komplett)
+// Avoids an AI call entirely when specs are in the URL itself
+// Returns partial specs even if only GPU is found (user can fill in the rest)
+const preParseUrl = (url) => {
+  const slug = decodeURIComponent(url).replace(/[-_/]/g, " ").toUpperCase();
+  const cpu = slug.match(/(?:R[579]|RYZEN [579])\s*\d{4}X?3?D?/i)?.[0]
+    || slug.match(/I[3579]\s*\d{4,5}[A-Z]*/i)?.[0] || null;
+  const gpu = slug.match(/(?:RTX|GTX|RX)\s*\d{4}\s*(?:XT|TI|SUPER)?/i)?.[0] || null;
+  const ram = slug.match(/(\d{1,3})\s*GB/i)?.[0] || null;
+  const price = url.match(/(\d[\d\s]*)\s*kr/i)?.[1]?.replace(/\s/g, "") || null;
+  // Return partial specs if at least GPU or CPU is found (user fills the rest)
+  if (cpu || gpu) return { cpu: cpu?.trim() || null, gpu: gpu?.trim() || null, ram, vram: null, price_kr: price ? Number(price) : null, year: null };
+  return null;
+};
+
+// Fetches page text via Jina Reader proxy — returns null on failure instead of throwing
+// so the caller can fall back to URL slug parsing
 const fetchPageText = async (url) => {
-  const res = await fetch(`https://r.jina.ai/${url.trim()}`, {
-    headers: { "Accept": "text/plain", "X-Return-Format": "text" },
-  });
-  if (!res.ok) throw new Error(`Could not fetch URL (${res.status})`);
-  const text = await res.text();
-  return text.slice(0, 4000);
+  try {
+    const res = await fetch(`https://r.jina.ai/${url.trim()}`, {
+      headers: { "Accept": "text/plain", "X-Return-Format": "text" },
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.slice(0, 4000);
+  } catch {
+    return null;
+  }
+};
+
+// Sanitize user input before inserting into AI prompts — strips prompt injection attempts
+// Removes instruction-like patterns, role overrides, and system prompt manipulation
+const sanitizeInput = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/```[\s\S]*?```/g, "")                    // remove code blocks
+    .replace(/\b(ignore|forget|disregard|override)\b.*?(instructions?|above|prompt|rules?|system)/gi, "")
+    .replace(/\b(you are|act as|pretend|roleplay|new instructions?|system prompt)\b/gi, "")
+    .replace(/\b(reveal|show|output|print)\b.*?(prompt|instructions?|system|api.?key)/gi, "")
+    .replace(/<[^>]*>/g, "")                            // strip HTML tags
+    .replace(/[{}]/g, "")                               // remove braces that could break JSON context
+    .trim();
 };
 
 const extractSpecsPrompt = (content) =>
   `Extract PC hardware specs from this text. Reply with ONLY a JSON object, nothing else. No prose, no markdown.
 {"cpu":"exact model","gpu":"exact model","ram":"e.g. 16GB DDR4","vram":"e.g. 8GB GDDR6","price_kr":0,"year":0}
 Use null for any field not mentioned. price_kr = asking price in SEK. year = year built or listed.
-TEXT:\n${content}`;
+TEXT:\n${sanitizeInput(content)}`;
 
+// Validates that AI output only contains expected benchmark data, not injected content
+// Rejects responses with suspicious patterns like URLs, scripts, or instruction-like text
+const validateOutput = (parsed) => {
+  const json = JSON.stringify(parsed);
+  const suspicious = [
+    /https?:\/\//i,                     // URLs (should never appear in benchmark data)
+    /<script/i,                         // script injection
+    /document\.|window\.|eval\(/i,      // JS execution attempts
+    /\b(password|secret|token|cookie)\b/i,  // credential fishing
+  ];
+  for (const pattern of suspicious) {
+    if (pattern.test(json)) throw new Error("Response contained unexpected content and was rejected for safety.");
+  }
+  // Verify numeric fields are actually numbers, not strings with instructions
+  if (parsed.fps_1080p) {
+    for (const row of parsed.fps_1080p) {
+      if (typeof row.a !== "number" || typeof row.b !== "number" || typeof row.c !== "number")
+        throw new Error("Response contained non-numeric FPS values. Try again.");
+    }
+  }
+};
+
+// Extracts JSON from AI response text — finds first { to last } and strips any preamble/markdown
 const extractJSON = (raw) => {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
@@ -764,34 +927,74 @@ const extractJSON = (raw) => {
   throw new Error("No valid JSON found in AI response. Try again.");
 };
 
+// Sends prompt to AI API — uses Groq if API key provided, otherwise free Pollinations
+// Pollinations returns either plain text or a chat completion JSON envelope — we handle both
+// Retries once on 429 (rate limit) with a 3-second delay
 const runAI = async (prompt, apiKey) => {
-  const endpoint = apiKey
-    ? "https://api.groq.com/openai/v1/chat/completions"
-    : "https://text.pollinations.ai/";
+  // API priority: 1) User-provided key (Groq)  2) Built-in OpenRouter key  3) Free Pollinations
+  const orKey = import.meta.env.VITE_OPENROUTER_KEY;
+  let endpoint, model, authHeader;
+  if (apiKey) {
+    endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    model = "llama-3.3-70b-versatile";
+    authHeader = `Bearer ${apiKey}`;
+  } else if (orKey) {
+    endpoint = "https://openrouter.ai/api/v1/chat/completions";
+    model = "google/gemini-2.0-flash-lite-001"; // fast + cheap via OpenRouter
+    authHeader = `Bearer ${orKey}`;
+  } else {
+    endpoint = "https://text.pollinations.ai/openai";
+    model = "openai";
+    authHeader = null;
+  }
   const headers = { "Content-Type": "application/json" };
-  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-  const res = await fetch(endpoint, {
+  if (authHeader) headers["Authorization"] = authHeader;
+  const doFetch = () => fetch(endpoint, {
     method: "POST", headers,
-    body: JSON.stringify(
-      apiKey
-        ? { model: "llama-3.3-70b-versatile", temperature: 0.05, messages: [{ role: "user", content: prompt }] }
-        : { model: "openai-fast", messages: [{ role: "user", content: prompt }], seed: 42 }
-    ),
+    body: JSON.stringify({ model, temperature: 0.05, max_tokens: 4096, messages: [{ role: "user", content: prompt }] }),
   });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return apiKey
-    ? (await res.json()).choices?.[0]?.message?.content || ""
-    : await res.text();
+  let res = await doFetch();
+  // Auto-retry once on rate limit (429) after a short wait
+  if (res.status === 429) {
+    await new Promise(r => setTimeout(r, 3000));
+    res = await doFetch();
+  }
+  if (!res.ok) throw new Error(`API error ${res.status}. ${res.status === 429 ? "Rate limited — wait a minute and try again." : "Try again shortly."}`);
+  // All three APIs return OpenAI chat completion format
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
 };
 
+// Extracts hardware specs from text or URL input
+// Priority: 1) Pre-parse URL slug  2) Fetch page via Jina + AI  3) Fall back to slug partial
+// Auto-fills VRAM from GPU_VRAM lookup table if missing (avoids needing subcomponent pages)
 const extractSpecs = async (input, apiKey) => {
   if (!input?.trim()) return null;
   let content = input.trim();
-  if (isUrl(content)) content = await fetchPageText(content);
+  if (isUrl(content)) {
+    // Try to parse specs directly from URL slug (e.g. Webhallen product URLs)
+    const preParsed = preParseUrl(content);
+    if (preParsed) {
+      if (!preParsed.vram) preParsed.vram = lookupVram(preParsed.gpu);
+      return preParsed;
+    }
+    // URL didn't have recognizable specs — try fetching the page
+    const pageText = await fetchPageText(content);
+    if (pageText) {
+      content = pageText;
+    } else {
+      // Jina failed — use the URL itself as text input for AI
+      content = decodeURIComponent(content).replace(/[-_/]/g, " ");
+    }
+  }
   const raw = await runAI(extractSpecsPrompt(content.slice(0, 3000)), apiKey);
-  return JSON.parse(extractJSON(raw));
+  const specs = JSON.parse(extractJSON(raw));
+  // Auto-fill VRAM from known GPU specs if AI didn't extract it
+  if (!specs.vram && specs.gpu) specs.vram = lookupVram(specs.gpu);
+  return specs;
 };
 
+// Converts extracted specs object to a readable string for the comparison prompt
 const specsToString = (s) => {
   if (!s) return null;
   const parts = [s.cpu, s.gpu, s.ram, s.vram && `${s.vram} VRAM`].filter(Boolean);
@@ -800,8 +1003,11 @@ const specsToString = (s) => {
   return parts.join(", ");
 };
 
+// Price threshold for auto-selecting high-end reference tier from refs.json
 const TEMPLATE_HIGH_END_PRICE = 21000;
 
+// Auto-selects a high-end reference system based on planned purchase price
+// Uses tiers from refs.json (updated monthly): tier1 <16k, tier2 <22k, tier3 <30k
 const getHighEndRef = (plannedPrice) => {
   const p = Number(plannedPrice) || 0;
   const targetKr = p >= TEMPLATE_HIGH_END_PRICE ? p + 5000 : 15000;
@@ -813,7 +1019,8 @@ const getHighEndRef = (plannedPrice) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const CustomTab = ({ defaultOldSpec = "" }) => {
+// onResult callback: notifies parent App when comparison completes, so top cards can update
+const CustomTab = ({ defaultOldSpec = "", onResult = null }) => {
   const [systems, setSystems] = useState([
     { text: "", price: "", year: "" },
     { text: "", price: "", year: "" },
@@ -826,8 +1033,27 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
+  // Progress bar: 0-100, advances through stages as extraction/comparison progresses
+  // Uses a simulated tick that slowly fills during API waits to show activity
+  const [progress, setProgress] = useState(0);
+  const [progressTimer, setProgressTimer] = useState(null);
+  // Starts a slow animated fill from current to target (never reaches target — waits for real update)
+  const simulateProgress = (from, ceiling) => {
+    if (progressTimer) clearInterval(progressTimer);
+    let val = from;
+    const id = setInterval(() => {
+      val += (ceiling - val) * 0.03; // exponential slowdown — approaches but never reaches ceiling
+      setProgress(Math.round(val));
+    }, 200);
+    setProgressTimer(id);
+  };
+  const stopSimulation = () => { if (progressTimer) { clearInterval(progressTimer); setProgressTimer(null); } };
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  // Debug mode: shows raw AI responses and parsing details when toggled on
+  const [debug, setDebug] = useState(false);
+  const [debugLog, setDebugLog] = useState([]);
+  const addDebug = (msg) => setDebugLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
   // Extracted specs preview state
   const [extracted, setExtracted] = useState(null); // [{cpu,gpu,ram,vram,price_kr,year}, ...]
   const [editedSpecs, setEditedSpecs] = useState(null); // user-edited version
@@ -842,50 +1068,92 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
 
   const handleExtract = async () => {
     if (!systems[1].text.trim()) { setError("Enter your planned purchase."); return; }
-    setLoading(true); setError(null); setResult(null); setExtracted(null);
+    setLoading(true); setError(null); setResult(null); setExtracted(null); setDebugLog([]); setProgress(0);
     const key = apiKey.trim();
     const sysAInput = systems[0].text.trim() || defaultOldSpec;
     try {
       setLoadingMsg("Extracting specs...");
+      setProgress(5); simulateProgress(5, 35);
+      addDebug(`Extracting System A: "${sysAInput.slice(0, 80)}..."`);
+      addDebug(`Extracting System B: "${systems[1].text.slice(0, 80)}..."`);
       const [specsA, specsB] = await Promise.all([
         extractSpecs(sysAInput, key),
         extractSpecs(systems[1].text, key),
       ]);
+      stopSimulation(); setProgress(25); simulateProgress(25, 40);
+      addDebug(`System A specs: ${JSON.stringify(specsA)}`);
+      addDebug(`System B specs: ${JSON.stringify(specsB)}`);
 
       const sysCText = getHighEndRef(systems[1].price || specsB?.price_kr);
       setHighEndRef(sysCText);
+      addDebug(`System C auto-ref: "${sysCText}"`);
       const specsC = await extractSpecs(sysCText, key);
+      stopSimulation(); setProgress(40);
+      addDebug(`System C specs: ${JSON.stringify(specsC)}`);
 
       const specs = [specsA, specsB, specsC];
       setExtracted(specs);
       setEditedSpecs(specs.map(s => ({ cpu: "", gpu: "", ram: "", vram: "", price_kr: "", year: "", ...s })));
+      addDebug("Extraction complete — ready for comparison");
     } catch (e) {
+      addDebug(`EXTRACT ERROR: ${e.message}`);
       setError(e.message);
     } finally {
+      stopSimulation();
       setLoading(false);
       setLoadingMsg("");
     }
   };
 
   const handleCompare = async () => {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); stopSimulation(); setProgress(50);
     const key = apiKey.trim();
     try {
-      setLoadingMsg("Running benchmark comparison...");
       const mergedMeta = editedSpecs.map((s, i) => ({
         price: systems[i].price || s?.price_kr,
         year:  systems[i].year  || s?.year,
       }));
-      const cleanA = specsToString(editedSpecs[0]) || systems[0].text.trim() || defaultOldSpec;
-      const cleanB = specsToString(editedSpecs[1]) || systems[1].text;
-      const cleanC = editedSpecs[2] ? specsToString(editedSpecs[2]) : null;
-      const raw = await runAI(buildPrompt(cleanA, cleanB, cleanC), key);
-      const parsed = JSON.parse(extractJSON(raw));
+      const cleanA = sanitizeInput(specsToString(editedSpecs[0]) || systems[0].text.trim() || defaultOldSpec);
+      const cleanB = sanitizeInput(specsToString(editedSpecs[1]) || systems[1].text);
+      const cleanC = editedSpecs[2] ? sanitizeInput(specsToString(editedSpecs[2])) : null;
+      addDebug(`Compare inputs — A: "${cleanA}" | B: "${cleanB}" | C: "${cleanC}"`);
+      setProgress(60); simulateProgress(60, 95); // slow fill during API wait
+      // Try up to 2 times — free API sometimes truncates the large JSON response
+      let parsed = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        setLoadingMsg(attempt === 1 ? "Running benchmark comparison..." : "Response was incomplete, retrying...");
+        addDebug(`Comparison attempt ${attempt}...`);
+        const raw = await runAI(buildPrompt(cleanA, cleanB, cleanC), key);
+        addDebug(`Raw response length: ${raw.length} chars`);
+        addDebug(`Response starts: ${raw.slice(0, 100)}...`);
+        addDebug(`Response ends: ...${raw.slice(-100)}`);
+        try {
+          const json = extractJSON(raw);
+          addDebug(`Extracted JSON length: ${json.length} chars`);
+          parsed = JSON.parse(json);
+          // Validate AI response has required structure before rendering
+          if (parsed.systems?.a?.label && parsed.systems?.b?.label && parsed.systems?.c?.label) {
+            validateOutput(parsed);  // reject suspicious/injected content
+            addDebug(`Validation passed — systems: ${parsed.systems.a.label}, ${parsed.systems.b.label}, ${parsed.systems.c.label}`);
+            break;
+          }
+          addDebug(`Validation FAILED — missing system labels`);
+          parsed = null; // incomplete, retry
+        } catch (parseErr) {
+          addDebug(`JSON parse error: ${parseErr.message}`);
+          parsed = null;
+        }
+        if (attempt === 2 && !parsed)
+          throw new Error("AI returned incomplete data after 2 attempts. Try again, or use a Groq API key for more reliable results.");
+      }
+      stopSimulation(); setProgress(100);
       parsed._meta = mergedMeta;
       setResult(parsed);
+      if (onResult) onResult(parsed); // notify parent to update top cards
     } catch (e) {
       setError(e.message);
     } finally {
+      stopSimulation();
       setLoading(false);
       setLoadingMsg("");
     }
@@ -916,6 +1184,7 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
           <textarea rows={3} value={systems[1].text} onChange={e => updateSys(1, "text", e.target.value)}
             placeholder="Paste specs, product name, or a link — e.g. https://www.blocket.se/... or 'RTX 4070, Ryzen 5 7600X, 32GB DDR5'"
             style={{ ...inputStyle, borderColor: systems[1].text ? `${C_COLORS[1]}66` : "#2a2a2a", fontSize: 12 }}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !loading && !extracted) { e.preventDefault(); handleExtract(); } }}
             onFocus={e => e.target.style.borderColor = `${C_COLORS[1]}99`}
             onBlur={e => e.target.style.borderColor = systems[1].text ? `${C_COLORS[1]}66` : "#2a2a2a"}
           />
@@ -974,11 +1243,15 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
           )}
         </div>
 
-        {/* Prompt preview */}
-        <div>
+        {/* Prompt preview + Debug toggle */}
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <button onClick={() => setShowPrompt(v => !v)} style={{ background: "none", border: "none", color: "#444", fontFamily: "monospace", fontSize: 10, cursor: "pointer", letterSpacing: 2, padding: 0 }}>
             {showPrompt ? "▼" : "▶"} VIEW AI PROMPT TEMPLATE
           </button>
+          <button onClick={() => setDebug(v => !v)} style={{ background: "none", border: "none", color: debug ? "#F59E0B" : "#333", fontFamily: "monospace", fontSize: 10, cursor: "pointer", letterSpacing: 2, padding: 0 }}>
+            {debug ? "▼" : "▶"} DEBUG MODE
+          </button>
+        </div>
           {showPrompt && (
             <pre style={{ marginTop: 10, padding: "12px 14px", background: "#080808", border: "1px solid #1a1a1a", borderRadius: 2, fontSize: 10, color: "#444", fontFamily: "monospace", whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 240, overflowY: "auto" }}>
               {buildPrompt("[SYSTEM A]", "[SYSTEM B]", "[SYSTEM C]")}
@@ -996,6 +1269,41 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
           }}>
             {loading ? (loadingMsg || "▸ EXTRACTING...") : "▸ EXTRACT SPECS"}
           </button>
+        )}
+
+        {/* Battery-style progress bar — green fill that advances through stages */}
+        {loading && progress > 0 && (
+          <div style={{ width: "100%", marginTop: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                flex: 1, height: 18, background: "#0a0a0a", border: "2px solid #2a2a2a",
+                borderRadius: 3, overflow: "hidden", position: "relative",
+              }}>
+                {/* Battery terminal nub */}
+                <div style={{ position: "absolute", right: -6, top: 4, width: 4, height: 10, background: "#2a2a2a", borderRadius: "0 2px 2px 0" }} />
+                {/* Segmented battery cells */}
+                <div style={{ display: "flex", gap: 2, padding: 2, height: "100%" }}>
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const filled = progress >= (i + 1) * 10;
+                    const partial = !filled && progress > i * 10;
+                    const green = progress < 30 ? "#F59E0B" : progress < 70 ? "#84CC16" : "#22C55E";
+                    return (
+                      <div key={i} style={{
+                        flex: 1, borderRadius: 1,
+                        background: filled ? green : partial ? `${green}66` : "#111",
+                        boxShadow: filled ? `0 0 6px ${green}44` : "none",
+                        transition: "background 0.3s, box-shadow 0.3s",
+                      }} />
+                    );
+                  })}
+                </div>
+              </div>
+              <span style={{ fontSize: 10, color: "#555", fontFamily: "monospace", minWidth: 36 }}>{progress}%</span>
+            </div>
+            <div style={{ fontSize: 9, color: "#444", fontFamily: "monospace", letterSpacing: 2, marginTop: 4 }}>
+              {loadingMsg}
+            </div>
+          </div>
         )}
 
         {/* Step 2: Extracted specs preview + missing field prompts */}
@@ -1077,9 +1385,21 @@ const CustomTab = ({ defaultOldSpec = "" }) => {
             ⚠ {error}
           </div>
         )}
-      </div>
 
-      {result && <CustomResults result={result} />}
+        {result && <ResultsErrorBoundary><CustomResults result={result} /></ResultsErrorBoundary>}
+
+        {/* Debug panel: shows raw AI responses, parsing steps, and errors */}
+        {debug && debugLog.length > 0 && (
+          <div style={{ marginTop: 16, padding: "12px 14px", background: "#0a0a00", border: "1px solid #F59E0B22", borderRadius: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 10, color: "#F59E0B", fontFamily: "monospace", letterSpacing: 2 }}>// DEBUG LOG</span>
+              <button onClick={() => setDebugLog([])} style={{ background: "none", border: "1px solid #333", color: "#555", fontFamily: "monospace", fontSize: 9, cursor: "pointer", padding: "2px 8px", borderRadius: 2 }}>CLEAR</button>
+            </div>
+            <pre style={{ fontSize: 10, color: "#888", fontFamily: "monospace", whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 300, overflowY: "auto", margin: 0 }}>
+              {debugLog.join("\n")}
+            </pre>
+          </div>
+        )}
     </div>
   );
 };
@@ -1111,6 +1431,8 @@ export default function App() {
   const [tab, setTab] = useState("fps1080");
   const [tick, setTick] = useState(0);
   const [showCustom, setShowCustom] = useState(false);
+  // When a custom comparison completes, this holds the result — top cards switch to show it
+  const [customResult, setCustomResult] = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setTick(x => (x + 1) % 100), 50);
@@ -1147,11 +1469,11 @@ export default function App() {
               HARDWARE INTELLIGENCE TERMINAL v2.5.0
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: 2 }}>
-              <span style={{ color: SYSTEMS.old.color  }}>OLD</span>
+              <span style={{ color: customResult ? C_COLORS[0] : SYSTEMS.old.color }}>{customResult?.systems?.a?.label || "OLD"}</span>
               <span style={{ color: "#222", margin: "0 10px" }}>vs</span>
-              <span style={{ color: SYSTEMS.mine.color }}>PLANNED</span>
+              <span style={{ color: customResult ? C_COLORS[1] : SYSTEMS.mine.color }}>{customResult?.systems?.b?.label || "PLANNED"}</span>
               <span style={{ color: "#222", margin: "0 10px" }}>vs</span>
-              <span style={{ color: SYSTEMS.high.color }}>HIGH-END</span>
+              <span style={{ color: customResult ? C_COLORS[2] : SYSTEMS.high.color }}>{customResult?.systems?.c?.label || "HIGH-END"}</span>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -1169,10 +1491,50 @@ export default function App() {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 24px" }}>
 
-        {/* ── SYSTEM CARDS ── */}
+        {/* ── SYSTEM CARDS — show custom comparison results if available, otherwise template ── */}
         <div style={{ display: "flex", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
-          {Object.entries(SYSTEMS).map(([k, s]) => <SystemCard key={k} id={k} sys={s} />)}
+          {customResult?.systems ? (
+            ["a", "b", "c"].map((key, i) => {
+              const s = customResult.systems[key];
+              const color = C_COLORS[i];
+              const glow = C_GLOWS[i];
+              const meta = customResult._meta?.[i];
+              return (
+                <div key={key} style={{
+                  border: `1px solid ${color}44`, borderTop: `3px solid ${color}`,
+                  background: `linear-gradient(135deg, #0d0d0d 0%, ${color}15 100%)`,
+                  padding: "16px 20px", borderRadius: 2, flex: 1, minWidth: 200, position: "relative", overflow: "hidden",
+                }}>
+                  <div style={{ position: "absolute", top: 0, right: 0, width: 60, height: 60, background: `radial-gradient(circle at top right, ${glow}, transparent 70%)`, pointerEvents: "none" }} />
+                  <div style={{ fontSize: 10, color, letterSpacing: 4, marginBottom: 6, fontFamily: "monospace" }}>SYS::{key.toUpperCase()}</div>
+                  <div style={{ fontSize: 16, color: "#fff", fontFamily: "monospace", fontWeight: 700, marginBottom: 10, textShadow: `0 0 12px ${glow}` }}>{s.label}</div>
+                  {[["CPU", s.cpu], ["GPU", s.gpu], ["RAM", s.ram], ["VRAM", s.vram]].map(([k, v]) => (
+                    <div key={k} style={{ display: "flex", gap: 8, fontSize: 11, fontFamily: "monospace", marginBottom: 3 }}>
+                      <span style={{ color, minWidth: 40 }}>{k}</span>
+                      <span style={{ color: "#ccc" }}>{v}</span>
+                    </div>
+                  ))}
+                  {(meta?.price || s.price_kr || meta?.year || s.peak_year) && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #1a1a1a", fontSize: 10, fontFamily: "monospace", color: "#555" }}>
+                      {(meta?.price || s.price_kr) && `≈${Number(meta?.price || s.price_kr).toLocaleString()} kr`}
+                      {(meta?.price || s.price_kr) && (meta?.year || s.peak_year) && " · "}
+                      {(meta?.year || s.peak_year) && `${meta?.year || s.peak_year}`}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            Object.entries(SYSTEMS).map(([k, s]) => <SystemCard key={k} id={k} sys={s} />)
+          )}
         </div>
+        {/* Reset button: restore template cards */}
+        {customResult && (
+          <button onClick={() => setCustomResult(null)} style={{
+            marginBottom: 16, padding: "6px 14px", background: "transparent", border: "1px solid #333",
+            color: "#555", fontFamily: "monospace", fontSize: 10, cursor: "pointer", borderRadius: 2, letterSpacing: 2,
+          }}>↻ RESET TO TEMPLATE</button>
+        )}
 
         {/* ── CUSTOM COMPARE CTA ── */}
         <div style={{ marginBottom: 24 }}>
@@ -1205,12 +1567,13 @@ export default function App() {
               background: "#0a0a0a", border: `1px solid ${SYSTEMS.mine.color}22`,
               borderTop: "none", borderRadius: "0 0 2px 2px",
             }}>
-              <CustomTab defaultOldSpec={OLD_BEAST_SPEC} />
+              <CustomTab defaultOldSpec={OLD_BEAST_SPEC} onResult={setCustomResult} />
             </div>
           )}
         </div>
 
-        {/* ── TAB NAV ── */}
+        {/* ── TAB NAV + CONTENT — hidden when custom comparison replaces template data ── */}
+        {!customResult && <React.Fragment>
         <div style={{ display: "flex", gap: 2, marginBottom: 24, borderBottom: "1px solid #161616", flexWrap: "wrap" }}>
           {TABS.map((t) => {
             const active = tab === t.id;
@@ -1256,6 +1619,7 @@ export default function App() {
 
           {renderContent()}
         </div>
+        </React.Fragment>}
 
         {/* ── FOOTER ── */}
         <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>

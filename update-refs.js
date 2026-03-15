@@ -79,6 +79,8 @@ ${pageText}`;
     writeFileSync(REFS_FILE, JSON.stringify(refs, null, 2) + "\n", "utf8");
     log("refs.json updated");
 
+    // --refs-only flag: CI uses this to skip building (it builds separately)
+    // Without the flag, local/manual runs will also rebuild the public HTML
     const refsOnly = process.argv.includes("--refs-only");
     if (!refsOnly) {
       log("Rebuilding public HTML...");
