@@ -2,7 +2,7 @@
 # Registers a monthly Windows Task Scheduler job to run update-refs.js
 # Run once as Administrator: powershell -ExecutionPolicy Bypass -File setup-scheduler.ps1
 
-$taskName   = "AutoSilly-UpdateRefs"
+$taskName   = "PCComparisson-UpdateRefs"
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $nodeExe    = "D:\VSProjects\node.exe"   # adjust if node is elsewhere
 $scriptPath = Join-Path $scriptDir "update-refs.js"

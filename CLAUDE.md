@@ -1,4 +1,4 @@
-# AutoSilly — PC Hardware Dashboard
+# PC Purchase Comparisson — Hardware Dashboard
 
 ## Project Overview
 
