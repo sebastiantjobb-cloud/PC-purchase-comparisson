@@ -79,9 +79,14 @@ ${pageText}`;
     writeFileSync(REFS_FILE, JSON.stringify(refs, null, 2) + "\n", "utf8");
     log("refs.json updated");
 
-    log("Rebuilding public HTML...");
-    execSync("npm run build:public", { stdio: "inherit" });
-    log("Build complete");
+    const refsOnly = process.argv.includes("--refs-only");
+    if (!refsOnly) {
+      log("Rebuilding public HTML...");
+      execSync("npm run build:public", { stdio: "inherit" });
+      log("Build complete");
+    } else {
+      log("--refs-only: skipping build (CI will build separately)");
+    }
 
     log("=== update-refs.js finished successfully ===");
   } catch (err) {

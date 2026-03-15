@@ -3,14 +3,23 @@ name: Monthly Reference Update
 on:
   schedule:
     - cron: "0 3 1 * *"   # 03:00 UTC on the 1st of every month
-  workflow_dispatch:        # also allows manual trigger from GitHub UI
+  workflow_dispatch:        # manual trigger from GitHub UI
 
 permissions:
-  contents: write           # needed to commit refs.json and create releases
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       - name: Checkout repo
@@ -25,8 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run updater (fetch Webhallen + update refs.json + build)
-        run: node update-refs.js
+      - name: Fetch Webhallen + update refs.json
+        run: node update-refs.js --refs-only
+        # --refs-only flag: only update refs.json, skip the build step in the script
 
       - name: Commit updated refs.json
         run: |
@@ -36,17 +46,34 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update high-end refs $(date '+%Y-%m')"
           git push
 
-      - name: Create or update GitHub Release with new HTML
+      - name: Build for GitHub Pages
+        run: npm run build:pages
+
+      - name: Build single-file HTML (for download)
+        run: npm run build:public
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Create / update GitHub Release with HTML download
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="latest-build"
-          # Delete existing release if present, then recreate
           gh release delete "$TAG" --yes 2>/dev/null || true
           git tag -f "$TAG"
           git push origin "$TAG" --force
           gh release create "$TAG" \
             "PC-Comparisson-Public.html" \
-            --title "PC Comparison Dashboard (auto-updated $(date '+%B %Y'))" \
-            --notes "Monthly auto-updated build. Download the HTML file and open it in any browser — no install required." \
+            --title "PC Comparison Dashboard ($(date '+%B %Y'))" \
+            --notes "**Live version:** ${{ steps.deploy.outputs.page_url }}
+
+Download the HTML file for offline use — open in any browser, no install required.
+Auto-updated monthly with current Webhallen pricing." \
             --latest
