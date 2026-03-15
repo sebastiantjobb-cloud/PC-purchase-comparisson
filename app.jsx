@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import REFS from "./refs.json";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -10,10 +11,10 @@ const SYSTEMS = {
   old:  {
     label: "OLD BEAST",  color: "#F59E0B", glow: "rgba(245,158,11,0.4)",  dim: "rgba(245,158,11,0.15)",
     cpu: "i7-7700K",        gpu: "GTX 1080 Ti",      ram: "16GB DDR4", vram: "11GB GDDR5X",
-    tdp: 421, price: 21990, mult: null,
+    tdp: 421, price: 21990, year: 2017, mult: null,
   },
   mine: {
-    label: "MY BUILD",   color: "#06B6D4", glow: "rgba(6,182,212,0.4)",   dim: "rgba(6,182,212,0.15)",
+    label: "PLANNED",    color: "#06B6D4", glow: "rgba(6,182,212,0.4)",   dim: "rgba(6,182,212,0.15)",
     cpu: "Ryzen 5 7600X",   gpu: "RTX 5060 Ti 16GB", ram: "32GB DDR5", vram: "16GB GDDR7",
     tdp: 330, price: 12000, mult: "2.2× GPU · 3.2× CPU · 7× AI",
   },
@@ -103,7 +104,7 @@ const POWER_DATA = [
 // For peak power, lower = better — we'll invert that display
 const POWER_CHART_DATA = [
   { label: "OLD BEAST",  watts: 421, fpsW: 19.2, aiW: 5.2,  monthlykr: 91  },
-  { label: "MY BUILD",   watts: 330, fpsW: 37.6, aiW: 185,  monthlykr: 71  },
+  { label: "PLANNED",   watts: 330, fpsW: 37.6, aiW: 185,  monthlykr: 71  },
   { label: "HIGH-END",   watts: 410, fpsW: 36.6, aiW: 204,  monthlykr: 89  },
 ];
 
@@ -182,7 +183,7 @@ const SystemCard = ({ sys, id }) => (
     ))}
     <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #1a1a1a", display: "flex", justifyContent: "space-between", fontSize: 10, fontFamily: "monospace" }}>
       <span style={{ color: "#444" }}>~{sys.tdp}W peak</span>
-      <span style={{ color: "#666" }}>≈{sys.price.toLocaleString()} kr</span>
+      <span style={{ color: "#666" }}>≈{sys.price.toLocaleString()} kr{sys.year ? ` (${sys.year})` : ""}</span>
     </div>
     {sys.mult && (
       <div style={{ marginTop: 8, padding: "5px 8px", background: `${sys.color}11`, border: `1px solid ${sys.color}22`, borderRadius: 2, fontSize: 9, color: sys.color, fontFamily: "monospace", letterSpacing: 1 }}>
@@ -202,7 +203,7 @@ const FpsTab = ({ data }) => (
         <YAxis tick={{ fill: "#555", fontSize: 11, fontFamily: "monospace" }} label={{ value: "FPS", angle: -90, position: "insideLeft", fill: "#444", fontSize: 11, fontFamily: "monospace" }} />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "#ffffff08" }} />
         <Bar dataKey="old"  name="OLD BEAST" fill={SYSTEMS.old.color}  radius={[2,2,0,0]} />
-        <Bar dataKey="mine" name="MY BUILD"  fill={SYSTEMS.mine.color} radius={[2,2,0,0]} />
+        <Bar dataKey="mine" name="PLANNED"  fill={SYSTEMS.mine.color} radius={[2,2,0,0]} />
         <Bar dataKey="high" name="HIGH-END"  fill={SYSTEMS.high.color} radius={[2,2,0,0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -218,7 +219,7 @@ const RadarTab = () => (
         <PolarGrid stroke="#222" />
         <PolarAngleAxis dataKey="subject" tick={{ fill: "#666", fontSize: 11, fontFamily: "monospace" }} />
         <Radar name="OLD BEAST" dataKey="old"  stroke={SYSTEMS.old.color}  fill={SYSTEMS.old.color}  fillOpacity={0.12} strokeWidth={2} />
-        <Radar name="MY BUILD"  dataKey="mine" stroke={SYSTEMS.mine.color} fill={SYSTEMS.mine.color} fillOpacity={0.15} strokeWidth={2} />
+        <Radar name="PLANNED"  dataKey="mine" stroke={SYSTEMS.mine.color} fill={SYSTEMS.mine.color} fillOpacity={0.15} strokeWidth={2} />
         <Radar name="HIGH-END"  dataKey="high" stroke={SYSTEMS.high.color} fill={SYSTEMS.high.color} fillOpacity={0.12} strokeWidth={2} />
       </RadarChart>
     </ResponsiveContainer>
@@ -322,7 +323,7 @@ const AiTab = () => {
       <div style={{ marginTop: 8, padding: "12px 16px", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 2 }}>
         <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>// NOTES</div>
         <div style={{ fontSize: 11, color: "#555", fontFamily: "monospace", lineHeight: 1.8 }}>
-          <div>▸ LLM 13B: MY BUILD wins on VRAM (16GB) — HIGH-END limited to 12GB GDDR7</div>
+          <div>▸ LLM 13B: PLANNED wins on VRAM (16GB) — HIGH-END limited to 12GB GDDR7</div>
           <div>▸ GTX 1080 Ti has no Tensor Cores — AI workloads run on CUDA cores only (very slow)</div>
           <div>▸ RTX 5000 Blackwell: 4th-gen Tensor Cores + FP8 — massive AI throughput leap</div>
           <div>▸ Video gen (AnimateDiff, CogVideoX, Wan2.1) requires 8GB+ VRAM — OLD BEAST cannot run most</div>
@@ -352,7 +353,7 @@ const PowerTooltip = ({ active, payload, label }) => {
 const PowerTab = () => {
   const effData = [
     { label: "OLD BEAST", fpsW: 19.2, aiW: 5.2   },
-    { label: "MY BUILD",  fpsW: 37.6, aiW: 185    },
+    { label: "PLANNED",  fpsW: 37.6, aiW: 185    },
     { label: "HIGH-END",  fpsW: 36.6, aiW: 204    },
   ];
   const COLORS = [SYSTEMS.old.color, SYSTEMS.mine.color, SYSTEMS.high.color];
@@ -369,7 +370,7 @@ const PowerTab = () => {
           );
         })}
         <div style={{ fontSize: 10, color: "#333", fontFamily: "monospace", marginTop: 8 }}>
-          ▸ MY BUILD draws 91W less than OLD BEAST at peak — saves heat and noise
+          ▸ PLANNED draws 91W less than OLD BEAST at peak — saves heat and noise
         </div>
       </div>
 
@@ -435,7 +436,7 @@ const PowerTab = () => {
           })}
         </div>
         <div style={{ fontSize: 10, color: "#333", fontFamily: "monospace", marginTop: 12 }}>
-          ▸ MY BUILD saves ~{Math.round(SYSTEMS.old.tdp / 1000 * 4 * 30 * 1.8) - Math.round(SYSTEMS.mine.tdp / 1000 * 4 * 30 * 1.8)} kr/month vs OLD BEAST — ~{Math.round((Math.round(SYSTEMS.old.tdp / 1000 * 4 * 30 * 1.8) - Math.round(SYSTEMS.mine.tdp / 1000 * 4 * 30 * 1.8)) * 12)} kr/year
+          ▸ PLANNED saves ~{Math.round(SYSTEMS.old.tdp / 1000 * 4 * 30 * 1.8) - Math.round(SYSTEMS.mine.tdp / 1000 * 4 * 30 * 1.8)} kr/month vs OLD BEAST — ~{Math.round((Math.round(SYSTEMS.old.tdp / 1000 * 4 * 30 * 1.8) - Math.round(SYSTEMS.mine.tdp / 1000 * 4 * 30 * 1.8)) * 12)} kr/year
         </div>
       </div>
 
@@ -500,12 +501,585 @@ const ValueTab = () => {
       <div style={{ padding: "14px 16px", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: 2 }}>
         <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace", letterSpacing: 2, marginBottom: 10 }}>// VALUE VERDICT</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, fontFamily: "monospace", lineHeight: 1.8 }}>
-          <div style={{ color: SYSTEMS.mine.color }}>▸ MY BUILD delivers the best FPS-per-kr and TOPS-per-kr — highest value system</div>
-          <div style={{ color: SYSTEMS.high.color }}>▸ HIGH-END is fastest overall but costs ~1.75× more than MY BUILD for ~20% more FPS</div>
-          <div style={{ color: SYSTEMS.old.color  }}>▸ OLD BEAST was solid for its time — MY BUILD is faster in every metric for similar price</div>
-          <div style={{ color: "#555"             }}>▸ OLD BEAST: 21,990 kr (Webhallen). MY BUILD: 12,000 kr (parts). HIGH-END: 21,000 kr (Webhallen Config).</div>
+          <div style={{ color: SYSTEMS.mine.color }}>▸ PLANNED delivers the best FPS-per-kr and TOPS-per-kr — highest value system</div>
+          <div style={{ color: SYSTEMS.high.color }}>▸ HIGH-END is fastest overall but costs ~1.75× more than PLANNED for ~20% more FPS</div>
+          <div style={{ color: SYSTEMS.old.color  }}>▸ OLD BEAST was solid for its time — PLANNED is faster in every metric for similar price</div>
+          <div style={{ color: "#555"             }}>▸ OLD BEAST: 21,990 kr (Webhallen). PLANNED: 12,000 kr (parts). HIGH-END: 21,000 kr (Webhallen Config).</div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ── CUSTOM AI COMPARISON TAB ─────────────────────────────────────────────────
+const C_COLORS = ["#F59E0B", "#06B6D4", "#A855F7"];
+const C_GLOWS  = ["rgba(245,158,11,0.4)", "rgba(6,182,212,0.4)", "rgba(168,85,247,0.4)"];
+
+const buildPrompt = (x, y, z) => `You are a PC hardware benchmark database. Output ONLY a JSON object. No prose, no markdown, no explanation, no code fences. Start your response with { and end with }.
+
+SYSTEMS TO ANALYSE:
+A: ${x}
+B: ${y}
+C: ${z || "Ryzen 7 7800X3D + RTX 5070 + 32GB DDR5 — high-end 2025 gaming desktop"}
+
+--- REFERENCE DATA (use these as anchors, interpolate for unlisted hardware) ---
+
+3DMark TimeSpy GPU score:
+GTX 1070=6500, GTX 1080=7500, GTX 1080Ti=8500, RTX 2070=9000, RTX 2080=10500, RTX 2080Ti=13000
+RTX 3050(8GB)=6800, RTX 3060=9500, RTX 3060Ti=11500, RTX 3070=13000, RTX 3080=16000, RTX 3090=18000
+RTX 4060=10500, RTX 4060Ti=13500, RTX 4070=17000, RTX 4070Ti=21000, RTX 4080=24000, RTX 4090=32000
+RTX 5060Ti=18500, RTX 5070=22500, RTX 5080=28000
+RX 6700XT=10500, RX 7600=9000, RX 7700XT=12500, RX 7800XT=14500, RX 9060XT=13500, RX 9070=19500, RX 9070XT=22000
+
+Cinebench R23 MT (CPU):
+i5-10400=10800, i5-12600K=15800, i7-7700K=4820, i7-9700K=8800, i7-12700K=20000, i7-13700K=24000
+R5-3600=9800, R5-3600X=10200, R5-5500=11200, R5-5600=12500, R5-5600X=12800
+R5-7500F=14500, R5-7600X=15240, R7-7800X3D=15080, R7-9800X3D=16800
+
+1080p Cyberpunk 2077 Ultra FPS:
+GTX1080Ti=55, RTX3050=45, RTX3060=60, RTX3060Ti=75, RTX3070=88, RTX3080=105
+RTX4060=65, RTX4060Ti=82, RTX4070=100, RTX4070Ti=118, RTX4080=140, RTX4090=165
+RTX5060Ti=98, RTX5070=125, RX7700XT=72, RX9060XT=78, RX9070=112
+
+AI TOPS INT8 (Tensor/AI cores):
+GTX1080Ti=22(no tensor), RTX3050=112, RTX3060=102, RTX3060Ti=136, RTX3070=163, RTX3080=238
+RTX4060=194, RTX4060Ti=184, RTX4070=330, RTX4070Ti=641, RTX4080=780, RTX4090=1321
+RTX5060Ti=612, RTX5070=838, RX7700XT=200, RX9060XT=350, RX9070=480
+
+GPU Memory bandwidth GB/s:
+GTX1080Ti=484, RTX3050=224, RTX3060=360, RTX3060Ti=448, RTX3070=448, RTX3080=760
+RTX4060=272, RTX4060Ti=288, RTX4070=504, RTX4070Ti=672, RTX4080=717, RTX4090=1008
+RTX5060Ti=480, RTX5070=672, RX7700XT=432, RX9060XT=384, RX9070=576
+
+VRAM GB: GTX1080Ti=11, RTX3050=8, RTX3060=12, RTX3060Ti=8, RTX3070=8, RTX3080=10
+RTX4060=8, RTX4060Ti=8or16, RTX4070=12, RTX4070Ti=12, RTX4080=16, RTX4090=24
+RTX5060Ti=16, RTX5070=12, RX7700XT=12, RX9060XT=16, RX9070=16
+
+Cyberpunk 1440p ≈ 65% of 1080p. Elden Ring 1080p ≈ 1.7×Cyberpunk. Fortnite ≈ 3×Cyberpunk. Warzone ≈ 2.2×Cyberpunk. RDR2 ≈ 1.4×Cyberpunk. Hogwarts≈1.1×Cyberpunk. BG3≈1.5×Cyberpunk. Starfield≈0.85×Cyberpunk.
+
+LLM 7B tok/s: GTX1080Ti≈4(CUDA only), RTX3050≈8, RTX3060≈18, RTX3070≈28, RTX3080≈38, RTX4060Ti≈22, RTX4070≈45, RTX4080≈55, RTX5060Ti≈62, RTX5070≈85, RX9070≈42. OOM if VRAM<4GB for 7B quantised.
+LLM 13B needs 8GB+ VRAM. SD1.5 img/s: GTX1080Ti≈1.8, RTX3050≈4, RTX3080≈10, RTX4070≈12, RTX5060Ti≈14, RTX5070≈19.
+AnimateDiff needs 6GB+ VRAM. CogVideoX-5B needs 12GB+ VRAM.
+
+System price_kr: full desktop system price in SEK at launch/peak. peak_year: year that GPU/CPU combo was considered best value.
+GTX1080Ti systems≈20000-25000kr in 2017. RTX3080 systems≈25000-35000kr in 2021. RTX4070Ti systems≈25000-30000kr in 2023.
+
+--- OUTPUT FORMAT (fill every 0 with a real number, all labels ≤12 chars ALL CAPS) ---
+
+{"systems":{"a":{"label":"CURRENT","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"b":{"label":"UPGRADE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0},"c":{"label":"REFERENCE","cpu":"exact model","gpu":"exact model","ram":"XGB DDRx","vram":"XGB","price_kr":0,"peak_year":0}},"fps_1080p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"fps_1440p":[{"game":"Cyberpunk 2077","a":0,"b":0,"c":0},{"game":"Elden Ring","a":0,"b":0,"c":0},{"game":"Fortnite","a":0,"b":0,"c":0},{"game":"CoD Warzone","a":0,"b":0,"c":0},{"game":"RDR2","a":0,"b":0,"c":0},{"game":"Hogwarts Legacy","a":0,"b":0,"c":0},{"game":"BG3","a":0,"b":0,"c":0},{"game":"Starfield","a":0,"b":0,"c":0}],"benchmarks":[{"metric":"Cinebench R23 MT","unit":"pts","a":0,"b":0,"c":0,"max":20000},{"metric":"3DMark TimeSpy","unit":"pts","a":0,"b":0,"c":0,"max":25000},{"metric":"AI TOPS (INT8)","unit":"TOPS","a":0,"b":0,"c":0,"max":1000},{"metric":"VRAM","unit":"GB","a":0,"b":0,"c":0,"max":24},{"metric":"Mem Bandwidth","unit":"GB/s","a":0,"b":0,"c":0,"max":1100}],"radar":[{"subject":"1080p FPS","a":0,"b":0,"c":100},{"subject":"1440p FPS","a":0,"b":0,"c":100},{"subject":"CPU Score","a":0,"b":0,"c":100},{"subject":"GPU Score","a":0,"b":0,"c":100},{"subject":"AI Perf","a":0,"b":0,"c":100},{"subject":"VRAM","a":0,"b":0,"c":100},{"subject":"Memory BW","a":0,"b":0,"c":100}],"ai_workloads":[{"task":"LLM 7B (tok/s)","a":"~0","b":"~0","c":"~0","aRaw":0,"bRaw":0,"cRaw":0,"max":100},{"task":"SD 1.5 (img/s)","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":20},{"task":"SDXL (img/s)","a":"0","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":7},{"task":"AnimateDiff (f/min)","a":"N/A","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":40},{"task":"CogVideoX-5B","a":"OOM","b":"0","c":"0","aRaw":0,"bRaw":0,"cRaw":0,"max":100}],"summary":"2-3 sentence verdict."}
+
+Use N/A if a workload cannot run due to insufficient VRAM. Use OOM if VRAM is too small. radar values are 0-100 relative scores where system C=100 for each axis. All FPS values must be positive integers.`;
+
+const CCustomFpsChart = ({ data, labels }) => (
+  <ResponsiveContainer width="100%" height={340}>
+    <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 56 }} barGap={3} barCategoryGap="25%">
+      <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+      <XAxis dataKey="game" tick={{ fill: "#555", fontSize: 10, fontFamily: "monospace" }} angle={-35} textAnchor="end" interval={0} />
+      <YAxis tick={{ fill: "#555", fontSize: 10, fontFamily: "monospace" }} label={{ value: "FPS", angle: -90, position: "insideLeft", fill: "#444", fontSize: 10, fontFamily: "monospace" }} />
+      <Tooltip content={<CustomTooltip />} cursor={{ fill: "#ffffff08" }} />
+      <Bar dataKey="a" name={labels.a} fill={C_COLORS[0]} radius={[2,2,0,0]} />
+      <Bar dataKey="b" name={labels.b} fill={C_COLORS[1]} radius={[2,2,0,0]} />
+      <Bar dataKey="c" name={labels.c} fill={C_COLORS[2]} radius={[2,2,0,0]} />
+    </BarChart>
+  </ResponsiveContainer>
+);
+
+const CCustomRadar = ({ data, labels }) => (
+  <ResponsiveContainer width="100%" height={380}>
+    <RadarChart data={data} margin={{ top: 16, right: 40, bottom: 16, left: 40 }}>
+      <PolarGrid stroke="#222" />
+      <PolarAngleAxis dataKey="subject" tick={{ fill: "#666", fontSize: 11, fontFamily: "monospace" }} />
+      <Radar name={labels.a} dataKey="a" stroke={C_COLORS[0]} fill={C_COLORS[0]} fillOpacity={0.12} strokeWidth={2} />
+      <Radar name={labels.b} dataKey="b" stroke={C_COLORS[1]} fill={C_COLORS[1]} fillOpacity={0.15} strokeWidth={2} />
+      <Radar name={labels.c} dataKey="c" stroke={C_COLORS[2]} fill={C_COLORS[2]} fillOpacity={0.12} strokeWidth={2} />
+    </RadarChart>
+  </ResponsiveContainer>
+);
+
+const CustomResults = ({ result }) => {
+  const [sub, setSub] = useState("fps1080");
+  const { systems, fps_1080p, fps_1440p, benchmarks, radar, ai_workloads, summary, _meta } = result;
+  const labels = { a: systems.a.label, b: systems.b.label, c: systems.c.label };
+  const sysArr = [
+    { ...systems.a, color: C_COLORS[0], glow: C_GLOWS[0] },
+    { ...systems.b, color: C_COLORS[1], glow: C_GLOWS[1] },
+    { ...systems.c, color: C_COLORS[2], glow: C_GLOWS[2] },
+  ];
+  const subTabs = [
+    { id: "fps1080", label: "1080p" }, { id: "fps1440", label: "1440p" },
+    { id: "radar", label: "RADAR" }, { id: "bench", label: "BENCHMARKS" },
+    { id: "ai", label: "AI" },
+  ];
+
+  return (
+    <div style={{ marginTop: 28, borderTop: "1px solid #1a1a1a", paddingTop: 24 }}>
+      <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace", letterSpacing: 3, marginBottom: 16 }}>// AI ANALYSIS RESULT</div>
+
+      {/* System cards */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+        {sysArr.map((s, i) => (
+          <div key={i} style={{ flex: 1, minWidth: 160, padding: "14px 16px", background: "#0d0d0d", border: `1px solid ${s.color}33`, borderTop: `2px solid ${s.color}`, borderRadius: 2 }}>
+            <div style={{ fontSize: 9, color: s.color, fontFamily: "monospace", letterSpacing: 3, marginBottom: 4 }}>SYS::{String.fromCharCode(65+i)}</div>
+            <div style={{ fontSize: 14, color: "#fff", fontFamily: "monospace", fontWeight: 700, marginBottom: 8 }}>{s.label}</div>
+            {[["CPU", s.cpu], ["GPU", s.gpu], ["RAM", s.ram], ["VRAM", s.vram]].map(([k, v]) => (
+              <div key={k} style={{ fontSize: 10, fontFamily: "monospace", marginBottom: 2, display: "flex", gap: 6 }}>
+                <span style={{ color: s.color, minWidth: 36 }}>{k}</span>
+                <span style={{ color: "#bbb" }}>{v}</span>
+              </div>
+            ))}
+            {(() => {
+              const sysKey = ["a","b","c"][i];
+              const price = _meta?.[i]?.price || result.systems[sysKey]?.price_kr;
+              const year  = _meta?.[i]?.year  || result.systems[sysKey]?.peak_year;
+              const isEst = !_meta?.[i]?.price && result.systems[sysKey]?.price_kr;
+              return (price || year) ? (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a", fontSize: 10, fontFamily: "monospace", color: "#555" }}>
+                  {price && `≈${Number(price).toLocaleString()} kr`}
+                  {price && year && " · "}
+                  {year && `${year}`}
+                  {isEst && <span style={{ color: "#333", marginLeft: 6 }}>(est.)</span>}
+                </div>
+              ) : null;
+            })()}
+          </div>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
+        {sysArr.map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontFamily: "monospace", color: s.color }}>
+            <div style={{ width: 10, height: 10, background: s.color, borderRadius: 1 }} />
+            {s.label}
+          </div>
+        ))}
+      </div>
+
+      {/* Sub-tabs */}
+      <div style={{ display: "flex", gap: 2, marginBottom: 20, borderBottom: "1px solid #161616", flexWrap: "wrap" }}>
+        {subTabs.map(t => {
+          const active = sub === t.id;
+          return (
+            <button key={t.id} onClick={() => setSub(t.id)} style={{
+              padding: "8px 16px", background: active ? "#111" : "transparent", border: "none",
+              borderBottom: active ? `2px solid ${C_COLORS[1]}` : "2px solid transparent",
+              color: active ? C_COLORS[1] : "#444", fontFamily: "monospace", fontSize: 10,
+              letterSpacing: 2, cursor: "pointer", transition: "all 0.15s", outline: "none",
+            }}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.color = "#888"; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.color = "#444"; }}>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sub-tab content */}
+      {sub === "fps1080" && <CCustomFpsChart data={fps_1080p} labels={labels} />}
+      {sub === "fps1440" && <CCustomFpsChart data={fps_1440p} labels={labels} />}
+      {sub === "radar"   && <CCustomRadar data={radar} labels={labels} />}
+      {sub === "bench"   && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {benchmarks.map(b => {
+            const maxVal = Math.max(b.a, b.b, b.c);
+            return (
+              <div key={b.metric}>
+                <div style={{ fontSize: 10, color: "#555", fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>// {b.metric}</div>
+                {sysArr.map((s, i) => {
+                  const key = ["a","b","c"][i];
+                  return <GlowBar key={i} label={s.label} value={b[key]} max={b.max} color={s.color} glow={s.glow} unit={` ${b.unit}`} isWinner={b[key] === maxVal} />;
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {sub === "ai" && (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #222" }}>
+                <th style={{ textAlign: "left", color: "#444", padding: "6px 12px", fontWeight: 400, fontSize: 10, letterSpacing: 2 }}>WORKLOAD</th>
+                {sysArr.map((s, i) => <th key={i} style={{ textAlign: "center", color: s.color, padding: "6px 12px", fontWeight: 400, fontSize: 10, letterSpacing: 2 }}>{s.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ai_workloads.map((row, i) => {
+                const maxRaw = Math.max(row.aRaw, row.bRaw, row.cRaw);
+                return (
+                  <tr key={i} style={{ borderBottom: "1px solid #111" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#ffffff06"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={{ padding: "10px 12px", color: "#888", fontSize: 11 }}>{row.task}</td>
+                    {[{val:row.a,raw:row.aRaw,s:sysArr[0]},{val:row.b,raw:row.bRaw,s:sysArr[1]},{val:row.c,raw:row.cRaw,s:sysArr[2]}].map(({val,raw,s},j) => {
+                      const isNA = val === "N/A" || val === "OOM";
+                      const isMax = raw === maxRaw && raw > 0;
+                      return (
+                        <td key={j} style={{ padding: "10px 12px", textAlign: "center" }}>
+                          <span style={{ color: isNA ? "#333" : s.color, fontWeight: isMax ? 700 : 400, fontSize: 13, textShadow: isMax ? `0 0 10px ${s.glow}` : "none" }}>
+                            {val}{isMax && <span style={{ fontSize: 8, marginLeft: 4, color: "#FFD700" }}>▲</span>}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Summary */}
+      <div style={{ marginTop: 24, padding: "14px 16px", background: "#0d0d0d", border: `1px solid ${C_COLORS[1]}22`, borderLeft: `3px solid ${C_COLORS[1]}`, borderRadius: 2 }}>
+        <div style={{ fontSize: 10, color: C_COLORS[1], fontFamily: "monospace", letterSpacing: 2, marginBottom: 8 }}>// VERDICT</div>
+        <div style={{ fontSize: 12, color: "#aaa", fontFamily: "monospace", lineHeight: 1.8 }}>{summary}</div>
+      </div>
+    </div>
+  );
+};
+
+// ── SPEC EXTRACTION HELPERS ──────────────────────────────────────────────────
+const isUrl = (s) => /^https?:\/\//i.test(s.trim());
+
+const fetchPageText = async (url) => {
+  const res = await fetch(`https://r.jina.ai/${url.trim()}`, {
+    headers: { "Accept": "text/plain", "X-Return-Format": "text" },
+  });
+  if (!res.ok) throw new Error(`Could not fetch URL (${res.status})`);
+  const text = await res.text();
+  return text.slice(0, 4000);
+};
+
+const extractSpecsPrompt = (content) =>
+  `Extract PC hardware specs from this text. Reply with ONLY a JSON object, nothing else. No prose, no markdown.
+{"cpu":"exact model","gpu":"exact model","ram":"e.g. 16GB DDR4","vram":"e.g. 8GB GDDR6","price_kr":0,"year":0}
+Use null for any field not mentioned. price_kr = asking price in SEK. year = year built or listed.
+TEXT:\n${content}`;
+
+const extractJSON = (raw) => {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start !== -1 && end > start) return raw.slice(start, end + 1);
+  throw new Error("No valid JSON found in AI response. Try again.");
+};
+
+const runAI = async (prompt, apiKey) => {
+  const endpoint = apiKey
+    ? "https://api.groq.com/openai/v1/chat/completions"
+    : "https://text.pollinations.ai/";
+  const headers = { "Content-Type": "application/json" };
+  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+  const res = await fetch(endpoint, {
+    method: "POST", headers,
+    body: JSON.stringify(
+      apiKey
+        ? { model: "llama-3.3-70b-versatile", temperature: 0.05, messages: [{ role: "user", content: prompt }] }
+        : { model: "openai-fast", messages: [{ role: "user", content: prompt }], seed: 42 }
+    ),
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return apiKey
+    ? (await res.json()).choices?.[0]?.message?.content || ""
+    : await res.text();
+};
+
+const extractSpecs = async (input, apiKey) => {
+  if (!input?.trim()) return null;
+  let content = input.trim();
+  if (isUrl(content)) content = await fetchPageText(content);
+  const raw = await runAI(extractSpecsPrompt(content.slice(0, 3000)), apiKey);
+  return JSON.parse(extractJSON(raw));
+};
+
+const specsToString = (s) => {
+  if (!s) return null;
+  const parts = [s.cpu, s.gpu, s.ram, s.vram && `${s.vram} VRAM`].filter(Boolean);
+  if (s.price_kr) parts.push(`${Number(s.price_kr).toLocaleString()} kr`);
+  if (s.year) parts.push(String(s.year));
+  return parts.join(", ");
+};
+
+const TEMPLATE_HIGH_END_PRICE = 21000;
+
+const getHighEndRef = (plannedPrice) => {
+  const p = Number(plannedPrice) || 0;
+  const targetKr = p >= TEMPLATE_HIGH_END_PRICE ? p + 5000 : 15000;
+  if (targetKr <= 16000) return REFS.tier1;
+  if (targetKr <= 22000) return REFS.tier2;
+  if (targetKr <= 30000) return REFS.tier3;
+  const yr = (REFS.updated || "2025").slice(0, 4);
+  return `AMD Ryzen 7 9800X3D, RTX 5080 16GB GDDR7, 32GB DDR5, 2TB NVMe SSD, Windows 11, ~${targetKr} kr, ${yr}`;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+const CustomTab = ({ defaultOldSpec = "" }) => {
+  const [systems, setSystems] = useState([
+    { text: "", price: "", year: "" },
+    { text: "", price: "", year: "" },
+    { text: "", price: "", year: "" },
+  ]);
+  const updateSys = (i, field, val) => setSystems(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
+  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem("gemini_key") || ""; } catch { return ""; } });
+  const [showKeyField, setShowKeyField] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("");
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  // Extracted specs preview state
+  const [extracted, setExtracted] = useState(null); // [{cpu,gpu,ram,vram,price_kr,year}, ...]
+  const [editedSpecs, setEditedSpecs] = useState(null); // user-edited version
+
+  const saveKey = (v) => { setApiKey(v); try { localStorage.setItem("gemini_key", v); } catch {} };
+
+  const REQUIRED = ["cpu", "gpu"];
+
+  const hasMissing = (specs) => specs?.some(s => s && REQUIRED.some(f => !s[f]));
+
+  const [highEndRef, setHighEndRef] = useState("");
+
+  const handleExtract = async () => {
+    if (!systems[1].text.trim()) { setError("Enter your planned purchase."); return; }
+    setLoading(true); setError(null); setResult(null); setExtracted(null);
+    const key = apiKey.trim();
+    const sysAInput = systems[0].text.trim() || defaultOldSpec;
+    try {
+      setLoadingMsg("Extracting specs...");
+      const [specsA, specsB] = await Promise.all([
+        extractSpecs(sysAInput, key),
+        extractSpecs(systems[1].text, key),
+      ]);
+
+      const sysCText = getHighEndRef(systems[1].price || specsB?.price_kr);
+      setHighEndRef(sysCText);
+      const specsC = await extractSpecs(sysCText, key);
+
+      const specs = [specsA, specsB, specsC];
+      setExtracted(specs);
+      setEditedSpecs(specs.map(s => ({ cpu: "", gpu: "", ram: "", vram: "", price_kr: "", year: "", ...s })));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setLoadingMsg("");
+    }
+  };
+
+  const handleCompare = async () => {
+    setLoading(true); setError(null);
+    const key = apiKey.trim();
+    try {
+      setLoadingMsg("Running benchmark comparison...");
+      const mergedMeta = editedSpecs.map((s, i) => ({
+        price: systems[i].price || s?.price_kr,
+        year:  systems[i].year  || s?.year,
+      }));
+      const cleanA = specsToString(editedSpecs[0]) || systems[0].text.trim() || defaultOldSpec;
+      const cleanB = specsToString(editedSpecs[1]) || systems[1].text;
+      const cleanC = editedSpecs[2] ? specsToString(editedSpecs[2]) : null;
+      const raw = await runAI(buildPrompt(cleanA, cleanB, cleanC), key);
+      const parsed = JSON.parse(extractJSON(raw));
+      parsed._meta = mergedMeta;
+      setResult(parsed);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setLoadingMsg("");
+    }
+  };
+
+  const updateExtracted = (i, field, val) =>
+    setEditedSpecs(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
+
+  const inputStyle = {
+    width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#ccc",
+    fontFamily: "monospace", fontSize: 12, padding: "10px 12px", borderRadius: 2, resize: "vertical", outline: "none",
+  };
+  const labelStyle = { fontSize: 10, color: "#555", fontFamily: "monospace", letterSpacing: 2, marginBottom: 6, display: "block" };
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: "#555", fontFamily: "monospace", marginBottom: 20, lineHeight: 1.8 }}>
+        Just enter what you're planning to buy — the AI handles the rest. Paste a product link, a name, or any description. No account or API key required.
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* System B — required, most prominent */}
+        <div>
+          <label style={{ ...labelStyle, color: C_COLORS[1], fontSize: 11 }}>
+            WHAT ARE YOU PLANNING TO BUY? <span style={{ color: C_COLORS[1] }}>*</span>
+          </label>
+          <textarea rows={3} value={systems[1].text} onChange={e => updateSys(1, "text", e.target.value)}
+            placeholder="Paste specs, product name, or a link — e.g. https://www.blocket.se/... or 'RTX 4070, Ryzen 5 7600X, 32GB DDR5'"
+            style={{ ...inputStyle, borderColor: systems[1].text ? `${C_COLORS[1]}66` : "#2a2a2a", fontSize: 12 }}
+            onFocus={e => e.target.style.borderColor = `${C_COLORS[1]}99`}
+            onBlur={e => e.target.style.borderColor = systems[1].text ? `${C_COLORS[1]}66` : "#2a2a2a"}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+            <input type="number" value={systems[1].price} onChange={e => updateSys(1, "price", e.target.value)}
+              placeholder="Price (kr) — optional" style={{ ...inputStyle, flex: 2, resize: "none", fontSize: 11, padding: "6px 10px" }} />
+            <input type="number" value={systems[1].year} onChange={e => updateSys(1, "year", e.target.value)}
+              placeholder="Year — optional" style={{ ...inputStyle, flex: 1, resize: "none", fontSize: 11, padding: "6px 10px" }} />
+          </div>
+        </div>
+
+        {/* System A — optional */}
+        <div>
+          <label style={{ ...labelStyle, color: C_COLORS[0], textShadow: `0 0 8px ${C_GLOWS[0]}` }}>CURRENT SETUP  (optional — leave blank to use template baseline)</label>
+          <textarea rows={2} value={systems[0].text} onChange={e => updateSys(0, "text", e.target.value)}
+            placeholder={`Leave blank to compare against: ${defaultOldSpec || "default baseline"}`}
+            style={{ ...inputStyle, borderColor: systems[0].text ? `${C_COLORS[0]}33` : "#1a1a1a", fontSize: 11 }}
+            onFocus={e => e.target.style.borderColor = `${C_COLORS[0]}66`}
+            onBlur={e => e.target.style.borderColor = systems[0].text ? `${C_COLORS[0]}33` : "#1a1a1a"}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <input type="number" value={systems[0].price} onChange={e => updateSys(0, "price", e.target.value)}
+              placeholder="Price (kr)" style={{ ...inputStyle, flex: 2, resize: "none", fontSize: 10, padding: "5px 8px" }} />
+            <input type="number" value={systems[0].year} onChange={e => updateSys(0, "year", e.target.value)}
+              placeholder="Year" style={{ ...inputStyle, flex: 1, resize: "none", fontSize: 10, padding: "5px 8px" }} />
+          </div>
+        </div>
+
+        {/* API Key — optional override */}
+        <div>
+          <button onClick={() => setShowKeyField(v => !v)} style={{ background: "none", border: "none", color: "#333", fontFamily: "monospace", fontSize: 10, cursor: "pointer", letterSpacing: 2, padding: 0 }}>
+            {showKeyField ? "▼" : "▶"} USE YOUR OWN API KEY (optional — faster / higher limits)
+          </button>
+          {showKeyField && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type={showKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={e => saveKey(e.target.value)}
+                  placeholder="AIza... — overrides built-in key"
+                  style={{ ...inputStyle, flex: 1, resize: "none" }}
+                />
+                <button onClick={() => setShowKey(v => !v)} style={{ padding: "0 14px", background: "#111", border: "1px solid #2a2a2a", color: "#555", fontFamily: "monospace", fontSize: 11, cursor: "pointer", borderRadius: 2 }}>
+                  {showKey ? "HIDE" : "SHOW"}
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: "#333", fontFamily: "monospace", marginTop: 4 }}>
+                Groq key (no credit card) — &nbsp;
+                <a href="https://console.groq.com" target="_blank" rel="noreferrer" style={{ color: C_COLORS[1], textDecoration: "none" }}>
+                  ↗ console.groq.com
+                </a>
+                &nbsp; · Stored in browser only.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Prompt preview */}
+        <div>
+          <button onClick={() => setShowPrompt(v => !v)} style={{ background: "none", border: "none", color: "#444", fontFamily: "monospace", fontSize: 10, cursor: "pointer", letterSpacing: 2, padding: 0 }}>
+            {showPrompt ? "▼" : "▶"} VIEW AI PROMPT TEMPLATE
+          </button>
+          {showPrompt && (
+            <pre style={{ marginTop: 10, padding: "12px 14px", background: "#080808", border: "1px solid #1a1a1a", borderRadius: 2, fontSize: 10, color: "#444", fontFamily: "monospace", whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 240, overflowY: "auto" }}>
+              {buildPrompt("[SYSTEM A]", "[SYSTEM B]", "[SYSTEM C]")}
+            </pre>
+          )}
+        </div>
+
+        {/* Step 1 button */}
+        {!extracted && (
+          <button onClick={handleExtract} disabled={loading} style={{
+            padding: "12px 24px", background: loading ? "#111" : `linear-gradient(135deg, ${C_COLORS[1]}22, ${C_COLORS[1]}11)`,
+            border: `1px solid ${C_COLORS[1]}${loading ? "22" : "66"}`, color: loading ? "#444" : C_COLORS[1],
+            fontFamily: "monospace", fontSize: 12, letterSpacing: 3, cursor: loading ? "not-allowed" : "pointer",
+            borderRadius: 2, transition: "all 0.2s", alignSelf: "flex-start",
+          }}>
+            {loading ? (loadingMsg || "▸ EXTRACTING...") : "▸ EXTRACT SPECS"}
+          </button>
+        )}
+
+        {/* Step 2: Extracted specs preview + missing field prompts */}
+        {extracted && editedSpecs && !result && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 10, color: C_COLORS[1], fontFamily: "monospace", letterSpacing: 3 }}>
+              // EXTRACTED SPECS — fill in any missing fields marked ⚠
+            </div>
+            {highEndRef && (
+              <div style={{ padding: "8px 12px", background: `${C_COLORS[2]}11`, border: `1px solid ${C_COLORS[2]}33`, borderRadius: 2, fontSize: 11, color: C_COLORS[2], fontFamily: "monospace" }}>
+                ✦ HIGH-END REFERENCE AUTO-ADDED: {highEndRef}
+              </div>
+            )}
+            {editedSpecs.map((s, i) => {
+              if (!s && i === 2) return null;
+              const sysLabel = ["A — CURRENT", "B — PLANNED", "C — REFERENCE"][i];
+              const color = C_COLORS[i];
+              const fields = [
+                { key: "cpu",  label: "CPU"  },
+                { key: "gpu",  label: "GPU"  },
+                { key: "ram",  label: "RAM"  },
+                { key: "vram", label: "VRAM" },
+              ];
+              return (
+                <div key={i} style={{ padding: "14px 16px", background: "#0d0d0d", border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, borderRadius: 2 }}>
+                  <div style={{ fontSize: 10, color, fontFamily: "monospace", letterSpacing: 2, marginBottom: 10 }}>{sysLabel}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {fields.map(({ key, label }) => {
+                      const missing = !s?.[key];
+                      return (
+                        <div key={key} style={{ flex: "1 1 160px" }}>
+                          <div style={{ fontSize: 9, color: missing ? "#F59E0B" : "#444", fontFamily: "monospace", marginBottom: 3 }}>
+                            {missing ? `⚠ ${label} — please fill in` : label}
+                          </div>
+                          <input
+                            value={editedSpecs[i]?.[key] || ""}
+                            onChange={e => updateExtracted(i, key, e.target.value)}
+                            placeholder={missing ? `Enter ${label}...` : ""}
+                            style={{
+                              width: "100%", background: missing ? "#1a0f00" : "#111",
+                              border: `1px solid ${missing ? "#F59E0B44" : "#222"}`,
+                              color: missing ? "#F59E0B" : "#aaa",
+                              fontFamily: "monospace", fontSize: 11, padding: "5px 8px", borderRadius: 2, outline: "none",
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {(s?.price_kr || s?.year) && (
+                    <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace", marginTop: 8 }}>
+                      {s.price_kr && `≈${Number(s.price_kr).toLocaleString()} kr`}{s.price_kr && s.year && " · "}{s.year && String(s.year)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleCompare} disabled={loading} style={{
+                padding: "12px 24px", background: loading ? "#111" : `linear-gradient(135deg, ${C_COLORS[1]}22, ${C_COLORS[1]}11)`,
+                border: `1px solid ${C_COLORS[1]}${loading ? "22" : "66"}`, color: loading ? "#444" : C_COLORS[1],
+                fontFamily: "monospace", fontSize: 12, letterSpacing: 3, cursor: loading ? "not-allowed" : "pointer",
+                borderRadius: 2, transition: "all 0.2s",
+              }}>
+                {loading ? (loadingMsg || "▸ COMPARING...") : "▸ RUN COMPARISON"}
+              </button>
+              <button onClick={() => { setExtracted(null); setEditedSpecs(null); }} style={{
+                padding: "12px 16px", background: "transparent", border: "1px solid #2a2a2a",
+                color: "#444", fontFamily: "monospace", fontSize: 11, cursor: "pointer", borderRadius: 2,
+              }}>
+                ← BACK
+              </button>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div style={{ padding: "10px 14px", background: "#1a0a0a", border: "1px solid #F59E0B44", borderRadius: 2, fontSize: 11, color: "#F59E0B", fontFamily: "monospace" }}>
+            ⚠ {error}
+          </div>
+        )}
+      </div>
+
+      {result && <CustomResults result={result} />}
     </div>
   );
 };
@@ -531,9 +1105,12 @@ const Scanlines = () => (
 );
 
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
+const OLD_BEAST_SPEC = `Intel Core i7-7700K, NVIDIA GeForce GTX 1080 Ti 11GB, 16GB DDR4, purchased 2017 for 21,990 kr`;
+
 export default function App() {
   const [tab, setTab] = useState("fps1080");
   const [tick, setTick] = useState(0);
+  const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setTick(x => (x + 1) % 100), 50);
@@ -572,7 +1149,7 @@ export default function App() {
             <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: 2 }}>
               <span style={{ color: SYSTEMS.old.color  }}>OLD</span>
               <span style={{ color: "#222", margin: "0 10px" }}>vs</span>
-              <span style={{ color: SYSTEMS.mine.color }}>MINE</span>
+              <span style={{ color: SYSTEMS.mine.color }}>PLANNED</span>
               <span style={{ color: "#222", margin: "0 10px" }}>vs</span>
               <span style={{ color: SYSTEMS.high.color }}>HIGH-END</span>
             </div>
@@ -595,6 +1172,42 @@ export default function App() {
         {/* ── SYSTEM CARDS ── */}
         <div style={{ display: "flex", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
           {Object.entries(SYSTEMS).map(([k, s]) => <SystemCard key={k} id={k} sys={s} />)}
+        </div>
+
+        {/* ── CUSTOM COMPARE CTA ── */}
+        <div style={{ marginBottom: 24 }}>
+          <button
+            onClick={() => setShowCustom(v => !v)}
+            style={{
+              width: "100%", padding: "18px 24px",
+              background: showCustom ? "#0d0d0d" : `linear-gradient(135deg, #0d0d0d 0%, ${SYSTEMS.mine.color}11 100%)`,
+              border: `1px solid ${SYSTEMS.mine.color}${showCustom ? "66" : "33"}`,
+              borderLeft: `4px solid ${SYSTEMS.mine.color}`,
+              color: SYSTEMS.mine.color, fontFamily: "monospace", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              transition: "all 0.2s", outline: "none", borderRadius: 2,
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = SYSTEMS.mine.color}
+            onMouseLeave={e => e.currentTarget.style.borderColor = `${SYSTEMS.mine.color}${showCustom ? "66" : "33"}`}
+          >
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3 }}>✦ COMPARE YOUR OWN SETUP</span>
+              <span style={{ fontSize: 10, color: "#555", letterSpacing: 2 }}>
+                Enter any specs or link — AI generates a full performance comparison
+              </span>
+            </div>
+            <span style={{ fontSize: 18, transition: "transform 0.2s", transform: showCustom ? "rotate(90deg)" : "none" }}>▶</span>
+          </button>
+
+          {showCustom && (
+            <div style={{
+              marginTop: 2, padding: "24px",
+              background: "#0a0a0a", border: `1px solid ${SYSTEMS.mine.color}22`,
+              borderTop: "none", borderRadius: "0 0 2px 2px",
+            }}>
+              <CustomTab defaultOldSpec={OLD_BEAST_SPEC} />
+            </div>
+          )}
         </div>
 
         {/* ── TAB NAV ── */}

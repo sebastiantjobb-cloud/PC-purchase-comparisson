@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && copy dist\\index.html \"PC comparisson-Dashboard.html\"",
+    "build:public": "vite build && copy dist\\index.html \"PC-Comparisson-Public.html\"",
+    "update": "node update-refs.js",
     "preview": "vite preview"
   },
   "dependencies": {
