@@ -13,6 +13,10 @@ export default defineConfig({
   plugins: isSingleFile
     ? [react(), viteSingleFile()]  // inline all assets into one HTML
     : [react()],                   // normal Vite chunking for Pages
+  // Strip the OpenRouter key from public single-file builds so it never ends up in the HTML
+  ...(isSingleFile ? {
+    define: { 'import.meta.env.VITE_OPENROUTER_KEY': '""' },
+  } : {}),
   build: {
     target: 'esnext',
     ...(isSingleFile ? {
