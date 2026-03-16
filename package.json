@@ -9,7 +9,6 @@
     "build:pages": "vite build",
     "build:single": "cross-env VITE_SINGLE_FILE=true vite build",
     "build:public": "cross-env VITE_SINGLE_FILE=true vite build && node -e \"require('fs').copyFileSync('dist/index.html','PC-Comparisson-Public.html')\"",
-    "build:dashboard": "cross-env VITE_SINGLE_FILE=true vite build && node -e \"require('fs').copyFileSync('dist/index.html','PC comparisson-Dashboard.html')\"",
     "update": "node update-refs.js",
     "preview": "vite preview"
   },
@@ -22,6 +21,6 @@
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^10.1.0",
     "vite": "^6.2.1",
-    "vite-plugin-singlefile": "^2.3.0"
+    "vite-plugin-singlefile": "^2.3.2"
   }
 }

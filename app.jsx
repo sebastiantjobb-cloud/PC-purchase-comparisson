@@ -931,17 +931,12 @@ const extractJSON = (raw) => {
 // Pollinations returns either plain text or a chat completion JSON envelope — we handle both
 // Retries once on 429 (rate limit) with a 3-second delay
 const runAI = async (prompt, apiKey) => {
-  // API priority: 1) User-provided key (Groq)  2) Built-in OpenRouter key  3) Free Pollinations
-  const orKey = import.meta.env.VITE_OPENROUTER_KEY;
+  // API priority: 1) User-provided key (Groq)  2) Free Pollinations
   let endpoint, model, authHeader;
   if (apiKey) {
     endpoint = "https://api.groq.com/openai/v1/chat/completions";
     model = "llama-3.3-70b-versatile";
     authHeader = `Bearer ${apiKey}`;
-  } else if (orKey) {
-    endpoint = "https://openrouter.ai/api/v1/chat/completions";
-    model = "google/gemini-2.0-flash-lite-001"; // fast + cheap via OpenRouter
-    authHeader = `Bearer ${orKey}`;
   } else {
     endpoint = "https://text.pollinations.ai/openai";
     model = "openai";

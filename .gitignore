@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.html
 !index.html
+!PC-Comparisson-Public.html
 .env
 .env.*
 *.log
